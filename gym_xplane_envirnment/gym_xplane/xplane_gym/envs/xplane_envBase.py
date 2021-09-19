@@ -11,7 +11,7 @@ class XplaneEnv(gym.Env):
         self.client = client
         #print(parameters)
         
-        # hello
+        
         envSpace = envSpaces.xplane_space()
         self.ControlParameters = parameters.getParameters()
         self.action_space = envSpace._action_space()
