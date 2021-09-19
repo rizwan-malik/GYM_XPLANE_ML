@@ -34,7 +34,7 @@ if __name__ == '__main__':
     env.xpPort = args.xpPort
     env.clientPort = args.xpPort
     
-
+    print("Hello")
     #env.seed(123)
     agent = RandomAgent(env.action_space)
 

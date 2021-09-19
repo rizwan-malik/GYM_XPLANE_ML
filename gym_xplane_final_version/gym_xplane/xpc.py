@@ -1,4 +1,3 @@
-
 import socket
 import struct
 import select
@@ -9,7 +8,7 @@ class XPlaneConnect():
 	socket = None
 
 	# Basic Functions
-	def __init__(self, clientAddr, xpHost, xpPort  , clientPort, timeout ,max_episode_steps):
+	def __init__(self, clientAddr, xpHost, xpPort, clientPort, timeout, max_episode_steps):
 		'''Sets up a new connection to an X-Plane Connect plugin running in X-Plane.
 			xpPort = 49009
 			port = 0
@@ -22,18 +21,18 @@ class XPlaneConnect():
 		'''
 
 		# Validate parameters
-		#xpIP = None
+		# xpIP = None
 		try:
-			
-			socket.inet_pton(socket.AF_INET,xpHost)
-			socket.inet_pton(socket.AF_INET,clientAddr)
-			
-			
-			#print('Checking XpIp....',xpIP)
-		
+
+			socket.inet_pton(socket.AF_INET, xpHost)
+			socket.inet_pton(socket.AF_INET, clientAddr)
+
+
+		# print('Checking XpIp....',xpIP)
+
 		except:
 			raise ValueError("ip address not legal.")
-		
+
 		self.xpIp = xpHost
 		if xpPort < 0 or xpPort > 65535:
 			raise ValueError("The specified X-Plane port is not a valid port number.")
@@ -42,24 +41,20 @@ class XPlaneConnect():
 		if timeout < 0:
 			raise ValueError("timeout must be non-negative.")
 
-		#print('checking Client Port ...', port)
+		# print('checking Client Port ...', port)
 		# Setup XPlane IP and port
-		self.xpDst = (self.xpIp , xpPort)
-		#print('checking Destination Addr ...', self.xpDst)
-		# Create and bind socket        
+		self.xpDst = (self.xpIp, xpPort)
+		# print('checking Destination Addr ...', self.xpDst)
+		# Create and bind socket
 		self.clientDst = (clientAddr, clientPort)
-		#print('checking Client Addr ...', clientPort)
+		# print('checking Client Addr ...', clientPort)
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-		
+
 		self.socket.bind(self.clientDst)
 
-		
+		# print('my socket', self.socket.getsockname())
 
-		
-		
-		#print('my socket', self.socket.getsockname())
-
-		#print('finished ...')
+		# print('finished ...')
 
 		timeout /= 1000.0
 		self.socket.settimeout(timeout)
@@ -73,24 +68,22 @@ class XPlaneConnect():
 	def sendUDP(self, buffer):
 		'''Sends a message over the underlying UDP socket.'''
 		# Preconditions
-		if(len(buffer) == 0):
+		if (len(buffer) == 0):
 			raise ValueError("sendUDP: buffer is empty.")
 
 		self.socket.sendto(buffer, 0, self.xpDst)
 
 	def readUDP(self):
 		'''Reads a message from the underlying UDP socket.'''
-		#msgLen = 16384
-		#chunks = []
-		#bytes_recd = 0;
+		# msgLen = 16384
+		# chunks = []
+		# bytes_recd = 0;
 
-		
-		
 		return self.socket.recv(16384)
-		
+
 	def pauseSim(self, pause):
 		'''Pauses or un-pauses the physics simulation engine in X-Plane.
-		
+
 			Args:
 			  pause: True to pause the simulation; False to resume.
 		'''
@@ -100,23 +93,23 @@ class XPlaneConnect():
 
 		buffer = struct.pack(b"<4sxB", b"SIMU", pause)
 		self.sendUDP(buffer)
-	
+
 	# Configuration
 	def setCONN(self, port):
 		'''Sets the port on which the client sends and receives data.
-		
+
 			Args:
 			  port: The new port to use.
 		'''
-		#Validate parameters        
+		# Validate parameters
 		if port < 0 or port > 65535:
 			raise ValueError("The specified port is not a valid port number.")
 
-		#Send command
+		# Send command
 		buffer = struct.pack(("<4sxH", "CONN", port).encode('utf-8'))
 		self.sendUDP(buffer)
-		
-		#Rebind socket
+
+		# Rebind socket
 		clientAddr = ("10.42.0.1", port)
 		timeout = self.socket.gettimeout();
 		self.socket.close();
@@ -125,39 +118,34 @@ class XPlaneConnect():
 
 		self.socket.settimeout(timeout)
 
-		#Read response
+		# Read response
 		buffer = self.socket.recv(1024)
 
-
-	def getPOSI(self, ac = 0):
-		'''Gets position information for the specified aircraft.
-
+	def getPOSI(self, ac=0):
+		"""Gets position information for the specified aircraft.
 		Args:
-		  ac: The aircraft to set the control surfaces of. 0 is the main/player aircraft.
-		'''
-		# Send request packed_data = s.pack(string.encode('ascii'))
-		# the syntax below is also correct
-
-		# buffer = struct.pack("<4sxB".encode('utf-8'), "GETP".encode('utf-8'),ac)
+		  ac: The aircraft to get the position of. 0 is the main/player aircraft.
+		"""
+		# Send request
 		buffer = struct.pack(b"<4sxB", b"GETP", ac)
 		self.sendUDP(buffer)
 
 		# Read response
 		resultBuf = self.readUDP()
-		#results = struct.unpack("<4sxBfffffff", resultBuf[:34])
-		#print('I am position buffer', resultBuf)
-		if len(resultBuf) != 34:
+		if len(resultBuf) == 34:
+			result = struct.unpack(b"<4sxBfffffff", resultBuf)
+		elif len(resultBuf) == 46:
+			result = struct.unpack(b"<4sxBdddffff", resultBuf)
+		else:
 			raise ValueError("Unexpected response length.")
 
-		result = struct.unpack("<4sxBfffffff", resultBuf)
-		
-		if result[0].decode("utf-8") != "POSI":
+		if result[0] != b"POSI":
 			raise ValueError("Unexpected header: " + result[0])
 
 		# Drop the header & ac from the return value
 		return result[2:]
 
-	def sendPOSI(self, values, ac = 0):
+	def sendPOSI(self, values, ac=0):
 		'''Sets position information on the specified aircraft.
 
 			Args:
@@ -192,7 +180,7 @@ class XPlaneConnect():
 		self.sendUDP(buffer)
 
 	# Controls
-	def getCTRL(self, ac = 0):
+	def getCTRL(self, ac=0):
 		'''Gets the control surface information for the specified aircraft.
 
 		Args:
@@ -206,12 +194,12 @@ class XPlaneConnect():
 		resultBuf = self.readUDP()
 		msgL = type(resultBuf)
 		length = len(resultBuf)
-		#results = struct.unpack("<4sxBfffffff", resultBuf)
-		#print('I am control buffer', results)
-		#print('I am message length: ... ',msgL,length)
+		# results = struct.unpack("<4sxBfffffff", resultBuf)
+		# print('I am control buffer', results)
+		# print('I am message length: ... ',msgL,length)
 
-		#resultBuf = resultBuf[:31]
-		#print(resultBuf)
+		# resultBuf = resultBuf[:31]
+		# print(resultBuf)
 		if len(resultBuf) != 31:
 			raise ValueError("Unexpected response length.")
 
@@ -220,10 +208,10 @@ class XPlaneConnect():
 			raise ValueError("Unexpected header: " + result[0])
 
 		# Drop the header from the return value
-		result =result[1:7] + result[8:]
+		result = result[1:7] + result[8:]
 		return result
 
-	def sendCTRL(self, values, ac = 0):
+	def sendCTRL(self, values, ac=0):
 		'''Sets control surface information on the specified aircraft.
 
 			Args:
@@ -254,7 +242,7 @@ class XPlaneConnect():
 				val = values[i]
 			if i == 4:
 				val = -1 if (abs(val + 998) < 1e-4) else val
-				
+
 				buffer += struct.pack(b"b", val)
 			else:
 				buffer += struct.pack("<f", val)
@@ -265,9 +253,7 @@ class XPlaneConnect():
 		# Send
 		self.sendUDP(buffer)
 
-
-		
-	# DREF Manipulation    
+	# DREF Manipulation
 	def sendDREF(self, dref, values):
 		'''Sets the specified dataref to the specified value.
 
@@ -296,7 +282,7 @@ class XPlaneConnect():
 				raise ValueError("dref must be a non-empty string less than 256 characters.")
 			if value == None:
 				raise ValueError("value must be a scalar or sequence of floats.")
-		
+
 			# Pack message
 			if hasattr(value, "__len__"):
 				if len(value) > 255:
@@ -312,13 +298,13 @@ class XPlaneConnect():
 
 	def getDREF(self, dref):
 		'''Gets the value of an X-Plane dataref.
-			
+
 			Args:
 			  dref: The name of the dataref to get.
 
 			Returns: A sequence of data representing the values of the requested dataref.
 		'''
-		return self.getDREFs([dref])#[0]
+		return self.getDREFs([dref])  # [0]
 
 	def getDREFs(self, drefs):
 		'''Gets the value of one or more X-Plane datarefs.
@@ -332,15 +318,15 @@ class XPlaneConnect():
 		# Send request
 		buffer = struct.pack("<4sxB", b"GETD", len(drefs))
 		for dref in drefs:
-			#fmt = "<B{0:d}s".format(len(dref))
-			fmt=bytes('<B{0:d}s'.format(len(dref), dref), 'utf-8')
+			# fmt = "<B{0:d}s".format(len(dref))
+			fmt = bytes('<B{0:d}s'.format(len(dref), dref), 'utf-8')
 			buffer += struct.pack(fmt, len(dref), dref.encode('utf-8'))
 		self.sendUDP(buffer)
 
 		# Read and parse response
 		buffer = self.readUDP()
 		resultCount = struct.unpack_from("B", buffer, 5)[0]
-		#print(resultCount)
+		# print(resultCount)
 		offset = 6
 		result = []
 		for i in range(resultCount):
@@ -353,7 +339,7 @@ class XPlaneConnect():
 		return result
 
 	# Drawing
-	def sendTEXT(self, msg, x = -1, y = -1):
+	def sendTEXT(self, msg, x=-1, y=-1):
 		'''Sets a message that X-Plane will display on the screen.
 
 			Args:
@@ -417,7 +403,7 @@ class XPlaneConnect():
 			buffer = struct.pack(b"<4sxBB" + str(len(points)) + b"f", b"WYPT", op, len(points), *points)
 		self.sendUDP(buffer)
 
-	
+
 class ViewType(object):
 	Forwards = 73
 	Down = 74
