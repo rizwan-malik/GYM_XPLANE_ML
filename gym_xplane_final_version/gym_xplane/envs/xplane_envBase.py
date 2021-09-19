@@ -171,10 +171,10 @@ class XplaneEnv(gym.Env):
 				self.ControlParameters.state14['altitude'] = state[2]  # Altitude
 				self.ControlParameters.state14['Pitch'] = state[3]  # pitch
 				self.ControlParameters.state14['Roll'] = state[4]  # roll
-				self.ControlParameters.state14['velocity_x'] = state[6]  # local velocity x  OpenGL coordinates
+				self.ControlParameters.state14['velocity_x'] = state[7]  # local velocity x  OpenGL coordinates
 				self.ControlParameters.state14['velocity_y'] = state[
-					7]  # local velocity y  OpenGL coordinates
-				self.ControlParameters.state14['velocity_z'] = state[8]  # local velocity z   OpenGL coordinates
+					8]  # local velocity y  OpenGL coordinates
+				self.ControlParameters.state14['velocity_z'] = state[9]  # local velocity z   OpenGL coordinates
 				self.ControlParameters.state14['delta_altitude'] = abs(
 					state[2] - minimumAltitude)  # difference in altitude
 				self.ControlParameters.state14['delta_heading'] = abs(state[5] - headingReward)  # difference in
