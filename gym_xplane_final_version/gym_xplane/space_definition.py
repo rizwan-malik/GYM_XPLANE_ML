@@ -17,6 +17,12 @@ class xplane_space():
             "Gear":  spaces.Discrete(2),"Flaps":  spaces.Box(low=0, high=1, shape=()),
             "Speedbrakes": spaces.Box(low=-0.5, high=1.5, shape=())})
         '''
+
+        # return spaces.Box(np.array([ -1, -1, -1,-1/4]),np.array([1,1,1,1]))
+
+        # This is my definition of my action space and it is defined as follow:
+        # [long_stick_high, lat_stick_high, rudder_pedal_high, throttle_high], [long_stick_low, lat_stick_low,
+        # rudder_pedal_low, throttle_low]
         return spaces.Box(np.array([ -1, -1, -1,-1/4]),np.array([1,1,1,1]))
 
     def _observation_space(self):

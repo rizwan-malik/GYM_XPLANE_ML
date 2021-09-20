@@ -14,7 +14,6 @@ class RandomAgent(object):
         return self.action_space.sample()
 
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     #client = p3xpc.XPlaneConnect()
