@@ -21,7 +21,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 env = gym.make('gymXplane-v2')
 
 env.reset()
-# tf.compat.v1.disable_eager_execution()
 observation_examples = np.array([env.observation_space.sample() for x in range(10000)])
 scaler = sklearn.preprocessing.StandardScaler()
 scaler.fit(observation_examples)
@@ -72,14 +71,11 @@ class Policy():
 			self.sigma = tf.nn.sigmoid(self.sigma)
 
 			dist = tf.distributions.Normal(loc=mu, scale=self.sigma)
-			# self.action = tf.clip_by_value(dist.sample(1), env.action_space.low[0], env.action_space.high[0])
 			act_1 = tf.clip_by_value(dist.sample(1), env.action_space.low[0], env.action_space.high[0])
 			act_2 = tf.clip_by_value(dist.sample(1), env.action_space.low[1], env.action_space.high[1])
 			act_3 = tf.clip_by_value(dist.sample(1), env.action_space.low[2], env.action_space.high[2])
 			act_4 = tf.clip_by_value(dist.sample(1), env.action_space.low[3], env.action_space.high[3])
 			self.action = tf.concat([act_1, act_2, act_3, act_4], 0)
-			# print('action',self.action)
-			# act_1 =  tf.clip_by_value(dist.sample(1), env.action_space.low[0], env.action_space.high[0])
 
 			# Use adam
 			update = - (dist.log_prob(self.action) * self.target_placeholder) - (self.entropy_scalar * dist.entropy())
@@ -159,23 +155,14 @@ def actor_critic(num_episodes, learning_rate_critic, learning_rate_actor, entrop
 	for e in range(num_episodes):
 
 		state = env.reset()
-		avg_critic_loss = 0
-		avg_actor_loss = 0
 		i = 0
 		score = 0
 
 		while True:
 
 			# Take a step
-			# env.render()
 			action = actor.get_action(sess, state)
-			# print('action', action)
 			next_state, reward, done, _ = env.step(action)
-
-			# Append transition
-			# memory.append([state,action,reward,next_state,done])
-
-			# sample = random.sample(memory,1)
 
 			s_state, s_action, s_reward, s_next_state, s_done = [state, action, reward, next_state, done]
 
@@ -184,27 +171,16 @@ def actor_critic(num_episodes, learning_rate_critic, learning_rate_actor, entrop
 
 			critic_loss = critic.update(sess, s_state, critic_target)
 			actor_loss = actor.update(sess, s_state, td_error, s_action)
-
-			# action_value_summary = tf.Summary(value=[tf.Summary.Value(tag='Action Value',simple_value=action)])
-			# filewriter.add_summary(action_value_summary,steps)
-			# print('reward', s_reward)
-
 			i += 1
 			steps += 1
-			# avg_actor_loss += 1
-			# avg_critic_loss += critic_loss
 
 			score += reward
-			# print("Episode: " + str(e) + " Score: " + str(score))
 
 			if done:
 				break
 
 			state = next_state
-		# print("Episode: " + str(e) + " Score: " + str(score))
 		scores.append(score)
-	# reward_summary = tf.Summary(value=[tf.Summary.Value(tag='Reward',simple_value=score)])
-	# filewriter.add_summary(reward_summary,e)
 
 	return scores
 
